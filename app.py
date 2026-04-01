@@ -99,18 +99,38 @@ st.subheader("Build Schedule")
 st.caption("This button should call your scheduling logic once you implement it.")
 
 if st.button("Generate schedule"):
-    st.warning(
-        "Not implemented yet. Next step: create your scheduling logic (classes/functions) and call it here."
-    )
-    st.markdown(
-        """
-Suggested approach:
-1. Design your UML (draft).
-2. Create class stubs (no logic).
-3. Implement scheduling behavior.
-4. Connect your scheduler here and display results.
-"""
-    )
+    pending_tasks = owner.schedule.get_pending_tasks()
+    if not pending_tasks:
+        st.info("No active tasks yet. Add a task to build a schedule.")
+    else:
+        conflicts = owner.schedule.detect_conflicts()
+        if conflicts:
+            st.warning("Task conflicts detected:")
+            for conflict in conflicts:
+                st.warning(conflict)
+        else:
+            st.success("No conflicts detected in your schedule.")
+
+        sorted_tasks = owner.schedule.sort_by_time()
+        table_rows = []
+        for task in sorted_tasks:
+            time_display = (
+                task.time.strftime("%H:%M")
+                if isinstance(task.time, datetime)
+                else str(task.time)
+            )
+            table_rows.append(
+                {
+                    "Task": task.type,
+                    "Pet": task.pet.name if task.pet else "Unassigned",
+                    "Time": time_display,
+                    "Priority": task.priority,
+                    "Completed": task.completed,
+                }
+            )
+
+        st.markdown("### Scheduled tasks")
+        st.table(table_rows)
 
 # Vault of owners keyed by owner name:
 if "owners" not in st.session_state:
