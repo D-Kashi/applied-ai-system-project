@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip show *)",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Bash(pip install *)",
+      "Bash(python -c \"from pawpal_system import Owner, Pet, Task; from agent import run_schedule_agent; print\\('All imports OK'\\)\")"
+    ]
+  }
+}

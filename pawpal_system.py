@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime
 import uuid
 
-def _normalize_time(value: Any) -> datetime:
+def _to_time_obj(value: Any) -> datetime:
     if isinstance(value, datetime):
         return value
     if isinstance(value, str):
@@ -14,6 +14,17 @@ def _normalize_time(value: Any) -> datetime:
             except ValueError:
                 continue
     return datetime.max
+
+
+def _task_priority_key(task: "Task"):
+    return (-task.priority, _to_time_obj(getattr(task, "time", None)))
+
+
+def _advance_time_for_frequency(time: Any, frequency: str) -> Any:
+    from datetime import timedelta
+    dt = _to_time_obj(time)
+    delta = timedelta(days=1) if frequency.lower() == "daily" else timedelta(weeks=1)
+    return dt + delta
 
 @dataclass
 class Pet:
