@@ -3,7 +3,7 @@ import streamlit as st
 from datetime import datetime
 from dotenv import load_dotenv
 from pawpal_system import Owner, Pet, Task
-from agent import run_schedule_agent
+from agent import run_schedule_agent, evaluate_schedule_result
 
 load_dotenv()
 
@@ -194,16 +194,30 @@ if st.button("Run AI Schedule"):
     else:
         with st.spinner("Agent is planning, checking conflicts, and optimizing…"):
             try:
+                pending_ids = [t.id for t in owner.schedule.get_pending_tasks()]
                 result = run_schedule_agent(owner, _api_key)
                 owner_state["ai_result"] = result
+                owner_state["ai_eval"] = evaluate_schedule_result(result, pending_ids)
             except Exception as e:
                 st.error(f"Agent error: {e}")
                 owner_state.pop("ai_result", None)
+                owner_state.pop("ai_eval", None)
 
 if owner_state.get("ai_result"):
     result = owner_state["ai_result"]
 
     st.success(result.get("summary", ""))
+
+    ev = owner_state.get("ai_eval")
+    if ev:
+        label = f"Agent evaluation: {ev['checks_passed']}/{ev['checks_total']} checks passed  |  score {int(ev['score'] * 100)}%"
+        if ev["passed"]:
+            st.success(label)
+        else:
+            st.warning(label)
+            with st.expander("Evaluation issues"):
+                for issue in ev["issues"]:
+                    st.write(f"- {issue}")
 
     schedule = result.get("schedule", [])
     if schedule:

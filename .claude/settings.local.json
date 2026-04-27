@@ -6,7 +6,10 @@
       "Skill(claude-api:*)",
       "Bash(pip install *)",
       "Bash(python -c \"from pawpal_system import Owner, Pet, Task; from agent import run_schedule_agent; print\\('All imports OK'\\)\")",
-      "Bash(python -c \"from pawpal_system import Owner, Pet, Task, Schedule; from agent import run_schedule_agent; print\\('OK'\\)\")"
+      "Bash(python -c \"from pawpal_system import Owner, Pet, Task, Schedule; from agent import run_schedule_agent; print\\('OK'\\)\")",
+      "Bash(python -m pytest tests/test_pawpal.py -v)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_pawpal.py -v)",
+      "Bash(python -m pip install pytest -q)"
     ]
   }
 }

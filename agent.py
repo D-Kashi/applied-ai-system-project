@@ -9,6 +9,57 @@ import anthropic
 from pawpal_system import Owner
 
 
+def evaluate_schedule_result(result: dict, expected_task_ids: list) -> dict:
+    """Score the agent's output against a checklist of quality criteria.
+
+    Returns a dict with: passed (bool), score (0.0-1.0), checks_passed,
+    checks_total, and issues (list of failure messages).
+    """
+    issues = []
+    total = 0
+    passed = 0
+
+    def check(condition: bool, message: str) -> None:
+        nonlocal total, passed
+        total += 1
+        if condition:
+            passed += 1
+        else:
+            issues.append(message)
+
+    # Top-level structure
+    check("schedule" in result, "Result is missing 'schedule' key")
+    check("summary" in result, "Result is missing 'summary' key")
+    check(bool(result.get("summary", "").strip()), "Summary is empty")
+
+    schedule = result.get("schedule", [])
+    check(len(schedule) > 0, "Schedule contains no entries")
+
+    # All expected tasks appear in the output
+    returned_ids = {e.get("task_id", "") for e in schedule}
+    missing = set(expected_task_ids) - returned_ids
+    check(not missing, f"Tasks missing from schedule: {', '.join(missing)}")
+
+    # Per-entry field checks
+    required_fields = ["task_id", "task_name", "original_time", "pet", "reason"]
+    for i, entry in enumerate(schedule):
+        for field in required_fields:
+            val = entry.get(field, "")
+            check(
+                isinstance(val, str) and bool(val.strip()),
+                f"Entry {i + 1} has empty or missing '{field}'",
+            )
+
+    score = round(passed / total, 2) if total > 0 else 0.0
+    return {
+        "passed": len(issues) == 0,
+        "score": score,
+        "checks_passed": passed,
+        "checks_total": total,
+        "issues": issues,
+    }
+
+
 def _serialize_tasks(tasks) -> list:
     result = []
     for t in tasks:
