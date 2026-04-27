@@ -1,5 +1,9 @@
 # PawPal+
 
+[PawPal Demo Walkthrough](https://www.loom.com/share/f02e31984c8c404c92207acac4116f91)
+
+GitHub Link: https://github.com/D-Kashi/applied-ai-system-project
+
 
 
 **PawPal+** was originally designed as a rule-based pet care scheduling assistant. Its goal was to help a busy pet owner stay consistent with daily tasks by tracking those tasks against constraints like time, priority, and pet type. The system could detect scheduling conflicts, sort tasks by time or priority, and mark tasks as complete to keep the schedule current.
