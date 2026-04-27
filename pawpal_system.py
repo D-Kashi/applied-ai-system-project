@@ -20,11 +20,6 @@ def _task_priority_key(task: "Task"):
     return (-task.priority, _to_time_obj(getattr(task, "time", None)))
 
 
-def _advance_time_for_frequency(time: Any, frequency: str) -> Any:
-    from datetime import timedelta
-    dt = _to_time_obj(time)
-    delta = timedelta(days=1) if frequency.lower() == "daily" else timedelta(weeks=1)
-    return dt + delta
 
 @dataclass
 class Pet:
@@ -40,6 +35,7 @@ class Task:
     type: str = ""
     time: Any = field(default_factory=datetime.now)
     priority: int = 0
+    duration_minutes: int = 0
     completed: bool = False
     pet: Optional[Pet] = None
 
@@ -77,27 +73,13 @@ class Schedule:
         task = self.tasks_by_id.get(task_id)
         if not task:
             return False
-        freq = getattr(task, "frequency", None)
         task.mark_completed()
-        # move to archive
         try:
             self.tasks.remove(task)
         except ValueError:
             pass
         del self.tasks_by_id[task_id]
         self.archived_tasks[task_id] = task
-
-        # If recurring, create next instance
-        if isinstance(freq, str) and freq.lower() in ("daily", "weekly"):
-            next_time = _advance_time_for_frequency(task.time, freq)
-            new_task = Task(
-                type=task.type,
-                time=next_time,
-                pet=task.pet,
-                frequency=task.frequency,
-            )
-            # keep as pending (not completed)
-            self.add_task(new_task)
         return True
 
     def set_task_incomplete(self, task_id: str) -> bool:
@@ -123,6 +105,18 @@ class Schedule:
             del self.archived_tasks[task_id]
             return True
         return False
+
+    def delete_task(self, task_id: str) -> bool:
+        """Permanently remove a pending task by id."""
+        task = self.tasks_by_id.get(task_id)
+        if not task:
+            return False
+        try:
+            self.tasks.remove(task)
+        except ValueError:
+            pass
+        del self.tasks_by_id[task_id]
+        return True
 
     def get_pending_tasks(self) -> List[Task]:
         """Return a list of currently active (pending) tasks."""

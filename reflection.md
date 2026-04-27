@@ -1,85 +1,37 @@
-# PawPal+ Project Reflection
+# PawPal+ Reflection and Ethics
 
-## 1. System Design
-    Users should be able to add a pet(more than one), add tasks, see what tasks they have that are completed or have to be completed(schedule)
-**a. Initial design**
+## Limitations and Biases
 
-- Briefly describe your initial UML design.
-An owner has 0 to many pets. They have one schedule with many tasks on it. One pet can have 0 to many tasks
+PawPal+ has several limitations. The AI scheduler only knows what the user manually inputs. It has no access to a pet's health history, vet recommendations, or breed-specific care needs. This means it can suggest an ordering that sounds logical in general but may not be right for a specific animal. For example, it might schedule a walk right after feeding without knowing that the pet has a condition where that is harmful.
 
-- What classes did you include, and what responsibilities did you assign to each?
+The conflict detection is also limited to exact minute-level matches. Two tasks scheduled at 8:00 AM and 8:10 AM will not trigger a conflict warning even if the first task takes 30 minutes and they genuinely overlap. The system treats each task as a point in time, not a block of time.
 
-    The owner should be able to input their name and be able to add a pet, add tasks, and view the tasks they have that are completed or have yet to be completed. They should be able to change the status. Pet should have a name, type of pet it is, gender. Task class should have type of task (walk, appointment, feed, etc) and time the task should take place. Tasks should have a status of completed or incompleted (base status is incompleted until owner changes it) Schedule should store tasks. Tasks that are completed should be removed. 
-**b. Design changes**
-
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
-One change that was made was adding an ID to tasks for them to be tracked easier. Completed tasks are also changed to be archived instead of deleted unless the owner specficially deletes the completed task
+There is also a bias toward high-priority tasks in the AI's output. Because priority is passed to the model, it tends to justify high-priority tasks first and treat lower-priority ones as flexible, which may not always reflect what the owner actually wants.
 
 ---
 
-## 2. Scheduling Logic and Tradeoffs
+## Potential Misuse and Prevention
 
-**a. Constraints and priorities**
+PawPal+ is a low-risk application — it handles pet schedules, not sensitive personal data or critical systems. That said, a few misuse scenarios exist. Someone could repeatedly click "Run AI Schedule" to rack up API usage costs, since each run makes multiple Claude API calls. The agent loop already has a 12-iteration hard cap to limit this, and the API key stays private in a `.env` file rather than being exposed in the UI.
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
-Constraints that my scheduler considers is time. Time mostly matters as if it passes the time in order to do a task, especially if its something important like an appointment, then that would be troublesome for the user.  
-**b. Tradeoffs**
-
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
-The schedule uses a simple minute-level conflict check instead of full overlap or duration-based scheduling. It only flags tasks that share the same clock time, not tasks that partially overlap. This is reasonable here because the app is meant as a lightweight pet task tracker. It keeps the logic easy to understand and maintain while still catching the most common scheduling issue: two activities booked for the same moment.
+A more subtle misuse would be entering conflicting or nonsensical tasks to test whether the AI produces confident-sounding but wrong suggestions. The validate step in the agentic loop helps here — the agent is required to verify its own proposed schedule before finalizing it — but it is not a guarantee. Users should always treat AI scheduling suggestions as a starting point, not a final decision.
 
 ---
 
-## 3. AI Collaboration
+## What Surprised Me About Testing
 
-**a. How you used AI**
+The most surprising thing during testing was how silently things could break. The recurring task feature, where completing a daily task would automatically create the next one, appeared to be implemented and never raised an error during normal use. It was only when looking closely at the code that the frequency field was never actually defined on the task class. The feature was completely non-functional but gave no indication of that.
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
-I used AI for debugging and refining my classes and their methods, implementing new methods and drafting tests. The questions asking for
-test plans were most helpful and provided the most useful results/
-
-**b. Judgment and verification**
-
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
-I did not accept an AI suggestion as-is when it proposed handling recurrence by mutating the same task object. I checked the implementation and verified that the design should instead archive the completed task and create a new pending instance. I also had to change what was called in the main.py for pet as it did not take the gender and type string parameters inputted. 
-I validated suggestions by reading the code, comparing them to the intended behavior, and thinking  how the schedule should behave.
-
+Similarly, the priority field on task was always 0 in the schedule view because the UI collected "low/medium/high" as a string but never converted it to an integer before storing it on the object. The task table just silently showed 0 for every task.
 ---
 
-## 4. Testing and Verification
+## AI Collaboration
 
-**a. What you tested**
+Claude Code was used throughout this project for debugging, implementing new features, writing tests, and refining class methods.
 
-- What behaviors did you test?
-- Why were these tests important?
-I tested sorting tasks by time and recurrence logic so completing a daily task creates a new task for the next day. I also test conflict detection, with duplicate task times producing a warning. These tests were important to ensure functionality of the program. 
+**Helpful suggestion:** The most valuable suggestion was implementing the agentic workflow using a four-tool loop — `get_pending_tasks`, `detect_conflicts`, `validate_proposed_schedule`, and `finalize_schedule` — instead of a single prompt. This forced the AI to check its own proposed schedule for conflicts before committing to a final output, which made the AI component genuinely more reliable and more interesting than a one-shot answer. That structure came directly from an AI recommendation and it worked well.
 
-**b. Confidence**
+**Flawed suggestion:** During a code review, the AI flagged claude-opus-4-7 as an invalid model ID that would cause an API error. Acting on that suggestion would have caused a working feature to be changed unnecessarily. It was a reminder that AI-generated analysis of code can be confidently wrong, and that any suggestion touching something external needs to be verified against the actual documentation.
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
-I am decently confident that the scheduler works correctly and if I had more time, I would test more edge cases such as pets with no tasks or repeated tasks with the same time with multiple pets. 
-
----
-
-## 5. Reflection
-
-**a. What went well**
-
-- What part of this project are you most satisfied with?
-Im satisifed that the testing portion went well. There were no errors when I ran my tests, which makes me confident about my methods fucntioning properly.
-
-**b. What you would improve**
-
-- If you had another iteration, what would you improve or redesign?
-I would possibly add more constraints to scheduling tasks to cover more ground in order to improve its function. 
-
-**c. Key takeaway**
-
-- What is one important thing you learned about designing systems or working with AI on this project?
-I learned that designing systems can be really tedious and require a lot of testing and tweaking to ensure its functioning as intended. AI helps alot with expediting these processes
+## AI Engineer
+This project shows my growth as an AI Engineer. Compared to my knowledge at the beginning of this codepath course, I have gained much more information about AI and how to properly use and prompt it in order to help me improve upon my programming and further my understand on concepts I may not understand. 

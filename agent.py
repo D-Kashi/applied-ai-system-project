@@ -21,6 +21,7 @@ def _serialize_tasks(tasks) -> list:
             "id": t.id,
             "name": t.type,
             "time": time_str,
+            "duration_minutes": t.duration_minutes,
             "pet": t.pet.name if t.pet else "Unassigned",
             "priority": t.priority,
         })
@@ -209,4 +210,6 @@ def run_schedule_agent(owner: Owner, api_key: str) -> dict:
         if final_result is not None:
             break
 
-    return final_result or {"schedule": [], "summary": "Agent did not produce a schedule."}
+    if final_result is None:
+        raise RuntimeError("Agent did not finalize a schedule after 12 iterations. Try again or reduce the number of tasks.")
+    return final_result
